@@ -26,10 +26,6 @@ type Link struct {
 }
 
 var (
-	// linkMap = map[string]Link{"example": {id: "example", url: "https://example.com"}}
-
-	// linkMapMutex sync.RWMutex
-
 	charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
 	shortURLPattern = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
@@ -96,6 +92,7 @@ func main() {
 	e.GET("/:id", RedirectHandler)
 	e.GET("/:id/", RedirectHandler)
 	e.POST("/submit", SubmitHandler)
+	e.GET("/health", HealthHandler)
 
 	e.Logger.Fatal(e.Start(":8080"))
 	fmt.Println("Server started on :8080")
@@ -271,3 +268,7 @@ func isUrlValid(urlStr string) bool {
 
 // 	return nil
 // }
+
+func HealthHandler(c echo.Context) error {
+	return c.String(http.StatusOK, "OK")
+}
