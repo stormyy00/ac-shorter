@@ -1,15 +1,15 @@
 package model
 
-type link struct {
-	id         string
-	linkId     string
-	original   string
-	shortenUrl string
-	clicks     int
+type Link struct {
+	ID         string `json:"id"`
+	LinkID     string `json:"linkId"`
+	Original   string `json:"original"`
+	ShortenUrl string `json:"shortenUrl"`
+	Clicks     int    `json:"clicks"`
 }
 
-type folder struct {
-	id    string
-	name  string
-	links []link
+type Folder struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Links []Link `json:"links"`
 }

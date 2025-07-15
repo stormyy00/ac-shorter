@@ -12,18 +12,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/stormyy00/ac-shorter.git/model"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
-type Link struct {
-	id     string
-	url    string
-	short  string
-	clicks int
-}
+// type Link struct {
+// 	Id     string `json:"id"`
+// 	Url    string `json:"url"`
+// 	Short  string `json:"short"`
+// 	Clicks int    `json:"clicks"`
+// }
 
 var (
 	charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -60,11 +62,13 @@ func init() {
 	fmt.Println("Connected to database successfully")
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS links (
-		id VARCHAR(255) PRIMARY KEY,
-	        url TEXT NOT NULL,
-	        clicks INTEGER NOT NULL DEFAULT 0,
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);`)
+						id         TEXT PRIMARY KEY,
+						link_id    TEXT,
+						original   TEXT NOT NULL,
+						shorten_url TEXT,
+						clicks     INTEGER NOT NULL DEFAULT 0,
+						created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+						);`)
 
 	// if err := loadIntoMemory(); err != nil {
 	// 	panic(fmt.Sprintf("Failed to load links into memory: %v", err))
@@ -91,8 +95,11 @@ func main() {
 	e.GET("/", IndexHandler)
 	e.GET("/:id", RedirectHandler)
 	e.GET("/:id/", RedirectHandler)
+	e.DELETE("/links/:id", DeleteHandler)
+	e.DELETE("/links/:id/", DeleteHandler)
 	e.POST("/submit", SubmitHandler)
 	e.GET("/health", HealthHandler)
+	e.GET("/links", FetchHandler)
 
 	e.Logger.Fatal(e.Start(":8080"))
 	fmt.Println("Server started on :8080")
@@ -102,29 +109,30 @@ func RedirectHandler(c echo.Context) error {
 	id := c.Param("id")
 	fmt.Printf("Redirect requested for id: '%s'\n", id)
 
-	var url string
-	err := db.QueryRow("SELECT url FROM links WHERE id = ?", id).Scan(&url)
+	var original string
+	err := db.QueryRow("SELECT original FROM links WHERE id = ?", id).Scan(&original)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Printf("Link not found for id: %s\n", id)
 			return c.String(http.StatusNotFound, "Link not found")
 		}
+		fmt.Printf("DB query failed: %v\n", err)
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("DB query failed: %v", err))
 	}
 
 	res, err := db.Exec("UPDATE links SET clicks = clicks + 1 WHERE id = ?", id)
 	if err != nil {
-
 		fmt.Printf("Failed to update clicks for id %s: %v\n", id, err)
 	} else {
 		rowsAffected, _ := res.RowsAffected()
 		fmt.Printf("UPDATE result: %d rows affected for id %s\n", rowsAffected, id)
 	}
 
-	if !strings.Contains(url, "://") {
-		url = "http://" + url
+	if !strings.Contains(original, "://") {
+		original = "http://" + original
 	}
 
-	return c.Redirect(http.StatusFound, url)
+	return c.Redirect(http.StatusFound, original)
 }
 
 func generateRandString(length int) string {
@@ -170,31 +178,33 @@ func IndexHandler(c echo.Context) error {
 }
 
 func SubmitHandler(c echo.Context) error {
-	url := strings.TrimSpace(c.FormValue("url"))
-	short := strings.TrimSpace(c.FormValue("short"))
-	if url == "" {
+	original := strings.TrimSpace(c.FormValue("url"))
+	customShort := strings.TrimSpace(c.FormValue("short"))
+	fmt.Printf("Received original URL: '%s' and custom short: '%s'\n", original, customShort)
+	if original == "" {
 		return c.String(http.StatusBadRequest, "URL is required")
 	}
-	if !(len(url) >= 4 && (url[:4] == "http" || url[:5] == "https")) {
-		url = "http://" + url
+	if !(len(original) >= 4 && (original[:4] == "http" || original[:5] == "https")) {
+		original = "http://" + original
 	}
-	if !isUrlValid(url) {
+	if !isUrlValid(original) {
 		return c.JSON(http.StatusBadRequest, "Invalid URL")
 	}
+
 	var id string
-	if short != "" {
-		if !shortURLPattern.MatchString(short) {
+	if customShort != "" {
+		if !shortURLPattern.MatchString(customShort) {
 			return c.String(http.StatusBadRequest, "Short URL must be 3-20 alphanumeric characters")
 		}
 		var exists int
-		err := db.QueryRow("SELECT COUNT(1) FROM links WHERE id = ?", short).Scan(&exists)
+		err := db.QueryRow("SELECT COUNT(1) FROM links WHERE id = ?", customShort).Scan(&exists)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, "Error checking short URL")
 		}
 		if exists > 0 {
 			return c.String(http.StatusConflict, "Short URL already exists")
 		}
-		id = short
+		id = customShort
 	} else {
 		for {
 			candidate := generateRandString(6)
@@ -210,11 +220,15 @@ func SubmitHandler(c echo.Context) error {
 		}
 	}
 
+	shortenUrl := fmt.Sprintf("https://%s/%s", c.Request().Host, id)
+
 	fmt.Println("About to insert into DB")
 
+	linkId := uuid.New().String()
+
 	_, err := db.Exec(
-		`INSERT INTO links (id, url, clicks) VALUES (?, ?, ?)`,
-		id, url, 0,
+		`INSERT INTO links (id, link_id, original, shorten_url, clicks) VALUES (?, ?, ?, ?, ?)`,
+		id, linkId, original, shortenUrl, 0,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
@@ -224,7 +238,7 @@ func SubmitHandler(c echo.Context) error {
 	}
 	fmt.Println("Inserted into DB successfully")
 
-	return c.Redirect(http.StatusSeeOther, "/")
+	return c.JSON(http.StatusCreated, map[string]string{"status": "ok"})
 }
 
 func isUrlValid(urlStr string) bool {
@@ -270,5 +284,35 @@ func isUrlValid(urlStr string) bool {
 // }
 
 func HealthHandler(c echo.Context) error {
-	return c.String(http.StatusOK, "OK")
+	return c.JSON(http.StatusOK, map[string]string{"status": "OK"})
+}
+
+func FetchHandler(c echo.Context) error {
+	rows, err := db.Query("SELECT id, link_id, original, shorten_url, clicks FROM links")
+	if err != nil {
+		fmt.Println("DB Query Error:", err) // Add this line
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error querying links: %v", err))
+	}
+	defer rows.Close()
+
+	var links []model.Link
+	for rows.Next() {
+		var id, url, original, shortenUrl string
+		var clicks int
+		if err := rows.Scan(&id, &url, &original, &shortenUrl, &clicks); err != nil {
+			fmt.Println("Row Scan Error:", err)
+			return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning link: %v", err))
+		}
+		links = append(links, model.Link{ID: id, LinkID: shortenUrl, Original: original, ShortenUrl: shortenUrl, Clicks: clicks})
+	}
+	return c.JSON(http.StatusOK, links)
+}
+
+func DeleteHandler(c echo.Context) error {
+	id := c.Param("id")
+	_, err := db.Exec("DELETE FROM links WHERE id = ?", id)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to delete link")
+	}
+	return c.NoContent(http.StatusNoContent)
 }
