@@ -1,5 +1,7 @@
 
 "use client";
+import URLShortener from "@/components/home";
+
 
 export default function Home() {
   return (
@@ -22,6 +24,7 @@ export default function Home() {
           Test Endpoint
         </button>
       </div>
+      <URLShortener/>
     </div>
   );
 }
