@@ -159,17 +159,17 @@ func IndexHandler(c echo.Context) error {
 <h2>Existing Links</h2>
 <ul>`
 
-	rows, err := db.Query("SELECT id, url, clicks FROM links")
+	rows, err := db.Query("SELECT id, original, shorten_url, clicks FROM links")
 	if err != nil {
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error querying links: %v", err))
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var id, url string
+		var id, original, shortenUrl string
 		var clicks int
-		if err := rows.Scan(&id, &url, &clicks); err == nil {
-			html += fmt.Sprintf(`<li><a href="/%s">%s</a> &rarr; %s <span>(%d clicks)</span></li>`, id, id, url, clicks)
+		if err := rows.Scan(&id, &original, &shortenUrl, &clicks); err == nil {
+			html += fmt.Sprintf(`<li><a href="/%s">%s</a> &rarr; %s <span>(%d clicks)</span></li>`, id, id, original, clicks)
 		}
 	}
 	html += `</ul>`
