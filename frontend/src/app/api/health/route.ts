@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const GET = async () => {
   try {
-    const res = await fetch("http://localhost:8080/health", {
+    const res = await fetch(`${process.env.BACKEND_URL}/health`, {
       method: "GET",
     });
 

@@ -2,7 +2,7 @@
 
 export const getLinks = async () => {
   try {
-    const response = await fetch("http://localhost:8080/links", {
+    const response = await fetch(`${process.env.BACKEND_URL}/links`, {
       method: "GET",
     });
     if (!response.ok) throw new Error("Network response was not ok");
@@ -25,7 +25,7 @@ export const createLink = async (original: string, customShort: string) => {
     formData,
   });
 
-  const res = await fetch("http://localhost:8080/submit", {
+  const res = await fetch(`${process.env.BACKEND_URL}/submit`, {
     method: "POST",
     body: formData,
   });
@@ -36,7 +36,7 @@ export const createLink = async (original: string, customShort: string) => {
 };
 
 export const deleteLink = async (id: string) => {
-  const res = await fetch(`http://localhost:8080/links/${id}`, { method: "DELETE" });
+  const res = await fetch(`${process.env.BACKEND_URL}/links/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete link");
   return true;
 };
