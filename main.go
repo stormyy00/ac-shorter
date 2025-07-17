@@ -62,10 +62,11 @@ func init() {
 	fmt.Println("Connected to database successfully")
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS links (
-						id         TEXT PRIMARY KEY,
+						id INTEGER PRIMARY KEY AUTOINCREMENT,
 						link_id    TEXT,
 						original   TEXT NOT NULL,
 						shorten_url TEXT,
+						slug_url 	TEXT UNIQUE,
 						clicks     INTEGER NOT NULL DEFAULT 0,
 						created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 						);`)
@@ -106,26 +107,26 @@ func main() {
 }
 
 func RedirectHandler(c echo.Context) error {
-	id := c.Param("id")
-	fmt.Printf("Redirect requested for id: '%s'\n", id)
+	slug := c.Param("id")
+	fmt.Printf("Redirect requested for slug: '%s'\n", slug)
 
 	var original string
-	err := db.QueryRow("SELECT original FROM links WHERE id = ?", id).Scan(&original)
+	err := db.QueryRow("SELECT original FROM links WHERE slug_url = ?", slug).Scan(&original)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Printf("Link not found for id: %s\n", id)
+			fmt.Printf("Link not found for slug: %s\n", slug)
 			return c.String(http.StatusNotFound, "Link not found")
 		}
 		fmt.Printf("DB query failed: %v\n", err)
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("DB query failed: %v", err))
 	}
 
-	res, err := db.Exec("UPDATE links SET clicks = clicks + 1 WHERE id = ?", id)
+	res, err := db.Exec("UPDATE links SET clicks = clicks + 1 WHERE slug_url = ?", slug)
 	if err != nil {
-		fmt.Printf("Failed to update clicks for id %s: %v\n", id, err)
+		fmt.Printf("Failed to update clicks for slug %s: %v\n", slug, err)
 	} else {
 		rowsAffected, _ := res.RowsAffected()
-		fmt.Printf("UPDATE result: %d rows affected for id %s\n", rowsAffected, id)
+		fmt.Printf("UPDATE result: %d rows affected for slug %s\n", rowsAffected, slug)
 	}
 
 	if !strings.Contains(original, "://") {
@@ -191,44 +192,43 @@ func SubmitHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Invalid URL")
 	}
 
-	var id string
+	var slug string
 	if customShort != "" {
 		if !shortURLPattern.MatchString(customShort) {
 			return c.String(http.StatusBadRequest, "Short URL must be 3-20 alphanumeric characters")
 		}
 		var exists int
-		err := db.QueryRow("SELECT COUNT(1) FROM links WHERE id = ?", customShort).Scan(&exists)
+		err := db.QueryRow("SELECT COUNT(1) FROM links WHERE slug_url = ?", customShort).Scan(&exists)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, "Error checking short URL")
 		}
 		if exists > 0 {
 			return c.String(http.StatusConflict, "Short URL already exists")
 		}
-		id = customShort
+		slug = customShort
 	} else {
 		for {
 			candidate := generateRandString(6)
 			var exists int
-			err := db.QueryRow("SELECT COUNT(1) FROM links WHERE id = ?", candidate).Scan(&exists)
+			err := db.QueryRow("SELECT COUNT(1) FROM links WHERE slug_url = ?", candidate).Scan(&exists)
 			if err != nil {
 				return c.String(http.StatusInternalServerError, "Error checking generated URL")
 			}
 			if exists == 0 {
-				id = candidate
+				slug = candidate
 				break
 			}
 		}
 	}
 
-	shortenUrl := fmt.Sprintf("https://%s/%s", c.Request().Host, id)
-
+	shortenUrl := fmt.Sprintf("https://%s/%s", c.Request().Host, slug)
 	fmt.Println("About to insert into DB")
 
 	linkId := uuid.New().String()
 
 	_, err := db.Exec(
-		`INSERT INTO links (id, link_id, original, shorten_url, clicks) VALUES (?, ?, ?, ?, ?)`,
-		id, linkId, original, shortenUrl, 0,
+		`INSERT INTO links (link_id, original, shorten_url, slug_url, clicks) VALUES (?, ?, ?, ?, ?)`,
+		linkId, original, shortenUrl, slug, 0,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
@@ -288,22 +288,24 @@ func HealthHandler(c echo.Context) error {
 }
 
 func FetchHandler(c echo.Context) error {
-	rows, err := db.Query("SELECT id, link_id, original, shorten_url, clicks FROM links")
+	rows, err := db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links")
 	if err != nil {
-		fmt.Println("DB Query Error:", err) // Add this line
+		fmt.Println("DB Query Error:", err)
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error querying links: %v", err))
 	}
 	defer rows.Close()
 
 	var links []model.Link
 	for rows.Next() {
-		var id, url, original, shortenUrl string
+		var id int64
+		var linkid, original, shortenUrl, slugUrl string
 		var clicks int
-		if err := rows.Scan(&id, &url, &original, &shortenUrl, &clicks); err != nil {
+		var createdAt time.Time
+		if err := rows.Scan(&id, &linkid, &original, &shortenUrl, &slugUrl, &clicks, &createdAt); err != nil {
 			fmt.Println("Row Scan Error:", err)
 			return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning link: %v", err))
 		}
-		links = append(links, model.Link{ID: id, LinkID: shortenUrl, Original: original, ShortenUrl: shortenUrl, Clicks: clicks})
+		links = append(links, model.Link{ID: id, LinkID: linkid, Original: original, ShortenUrl: shortenUrl, SlugUrl: slugUrl, Clicks: clicks, CreatedAt: createdAt})
 	}
 	return c.JSON(http.StatusOK, links)
 }

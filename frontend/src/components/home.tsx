@@ -95,7 +95,7 @@ export default function URLShortener() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 w-full">
+    <div className="min-h-screen p-4 w-full">
       <div className="max-w-3xl mx-auto">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="text-center space-y-2">
