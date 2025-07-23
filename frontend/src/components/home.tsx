@@ -24,11 +24,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 import { getLinks, createLink, deleteLink } from "./actions";
 import { links } from "@/types";
+import Link from "next/link";
 
 export default function URLShortener() {
   const [originalUrl, setOriginalUrl] = useState("");
   const [customShort, setCustomShort] = useState("");
-  const [alert, setAlert] = useState(null);
+  const [alert, setAlert] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const {
     data: shortenedUrls = [],
@@ -36,7 +37,7 @@ export default function URLShortener() {
     isFetching,
   } = useQuery({
     queryKey: ["links"],
-    queryFn: async () => getLinks(),
+    queryFn: async () => getLinks("recent"),
   }) as {
     data: links[];
     refetch: () => void;
@@ -64,7 +65,7 @@ export default function URLShortener() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     try {
       await deleteLink(id);
       showAlert("Link deleted successfully!");
@@ -74,7 +75,7 @@ export default function URLShortener() {
     }
   };
 
-  const copyToClipboard = async (shortUrl) => {
+  const copyToClipboard = async (shortUrl: string) => {
     try {
       await navigator.clipboard.writeText(shortUrl);
       showAlert("Link copied to clipboard!");
@@ -83,12 +84,12 @@ export default function URLShortener() {
     }
   };
 
-  const truncateUrl = (url, maxLength = 50) => {
+  const truncateUrl = (url: string, maxLength = 50) => {
     if (typeof url !== "string") return "";
     return url.length > maxLength ? url.substring(0, maxLength) + "..." : url;
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSubmit();
     }
@@ -129,7 +130,6 @@ export default function URLShortener() {
             </Alert>
           )}
 
-          {/* URL Shortening Form */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -140,8 +140,8 @@ export default function URLShortener() {
                 Enter a long URL and optionally customize your short link
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="flex flex-col items-center gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 <div className="space-y-2">
                   <Label htmlFor="original-url">Website URL *</Label>
                   <div className="relative">
@@ -157,7 +157,7 @@ export default function URLShortener() {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 ">
                   <Label htmlFor="custom-short">
                     Custom Short URL (optional)
                   </Label>
@@ -177,7 +177,7 @@ export default function URLShortener() {
                   </div>
                 </div>
               </div>
-              <Button onClick={handleSubmit} className="w-full" size="lg">
+              <Button onClick={handleSubmit} className="rounded-lg" size="lg">
                 <Plus className="h-4 w-4 mr-2" />
                 Shorten URL
               </Button>
@@ -238,13 +238,13 @@ export default function URLShortener() {
                             asChild
                             className="h-8 w-8 p-0"
                           >
-                            <a
+                            <Link
                               href={shortenUrl || `/${id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
                               <ExternalLink className="w-4 h-4" />
-                            </a>
+                            </Link>
                           </Button>
                           <Button
                             variant="ghost"

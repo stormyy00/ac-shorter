@@ -3,4 +3,5 @@ export type links = {
     original: string;
     shortenUrl: string;
     clicks: number;
+    createdAt: number;
 }
