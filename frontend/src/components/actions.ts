@@ -1,13 +1,12 @@
 "use server"
 
-export const getLinks = async () => {
+export const getLinks = async (type = "" as string) => {
   try {
-    const response = await fetch(`${process.env.BACKEND_URL}/links`, {
+    const response = await fetch(`${process.env.BACKEND_URL}/links?type=${type}`, {
       method: "GET",
     });
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
-    console.log("Fetched links:", data);
     return data;
   } catch (error) {
     console.error("Error fetching links:", error);
