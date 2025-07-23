@@ -20,13 +20,6 @@ import (
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
-// type Link struct {
-// 	Id     string `json:"id"`
-// 	Url    string `json:"url"`
-// 	Short  string `json:"short"`
-// 	Clicks int    `json:"clicks"`
-// }
-
 var (
 	charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -101,6 +94,7 @@ func main() {
 	e.POST("/submit", SubmitHandler)
 	e.GET("/health", HealthHandler)
 	e.GET("/links", FetchHandler)
+	e.GET("/statistics", StatisticsHandler)
 
 	e.Logger.Fatal(e.Start(":8080"))
 	fmt.Println("Server started on :8080")
@@ -288,7 +282,18 @@ func HealthHandler(c echo.Context) error {
 }
 
 func FetchHandler(c echo.Context) error {
-	rows, err := db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links")
+	linkType := c.Param("type")
+	var rows *sql.Rows
+	var err error
+
+	if linkType == "" {
+		rows, err = db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links")
+	} else if linkType == "recent" {
+		rows, err = db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links ORDER BY created_at ASC LIMIT 4")
+	} else {
+		return c.String(http.StatusBadRequest, "Invalid type parameter")
+	}
+
 	if err != nil {
 		fmt.Println("DB Query Error:", err)
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error querying links: %v", err))
@@ -317,4 +322,56 @@ func DeleteHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Failed to delete link")
 	}
 	return c.NoContent(http.StatusNoContent)
+}
+
+func StatisticsHandler(c echo.Context) error {
+
+	var results []model.Statistics
+
+	// total click per month all links
+	row, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, SUM(clicks) AS total_clicks FROM links GROUP BY month ORDER BY month DESC ")
+
+	if err != nil {
+		fmt.Println("DB Query Error:", err)
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error querying links: %v", err))
+	}
+	defer row.Close()
+
+	for row.Next() {
+		var month string
+		var totalClicks int
+		if err := row.Scan(&month, &totalClicks); err != nil {
+			fmt.Println("Row Scan Error:", err)
+			return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning link: %v", err))
+		}
+		results = append(results, model.Statistics{
+			Month:       month,
+			TotalClicks: totalClicks,
+		})
+	}
+
+	// total click per month per link
+	row2, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, slug_url, SUM(clicks) AS total_clicks FROM links GROUP BY month, slug_url ORDER BY month DESC")
+
+	if err != nil {
+		fmt.Println("DB Query Error:", err)
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error querying links: %v", err))
+	}
+	defer row2.Close()
+
+	for row2.Next() {
+		var month, slugUrl string
+		var totalClicks int
+		if err := row2.Scan(&month, &slugUrl, &totalClicks); err != nil {
+			fmt.Println("Row Scan Error:", err)
+			return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning link: %v", err))
+		}
+		results = append(results, model.Statistics{
+			Month:       month,
+			SlugUrl:     slugUrl,
+			TotalClicks: totalClicks,
+		})
+	}
+
+	return c.JSON(http.StatusOK, results)
 }

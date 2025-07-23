@@ -17,3 +17,9 @@ type Folder struct {
 	Name  string `json:"name"`
 	Links []Link `json:"links"`
 }
+
+type Statistics struct {
+	Month       string `json:"month"`
+	SlugUrl     string `json:"slug_url,omitempty"`
+	TotalClicks int    `json:"total_clicks"`
+}
