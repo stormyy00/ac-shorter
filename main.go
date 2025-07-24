@@ -326,7 +326,8 @@ func DeleteHandler(c echo.Context) error {
 
 func StatisticsHandler(c echo.Context) error {
 
-	var results []model.Statistics
+	var allLinks []model.Statistics
+	var perLinks []model.Statistics
 
 	// total click per month all links
 	row, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, SUM(clicks) AS total_clicks FROM links GROUP BY month ORDER BY month DESC ")
@@ -344,14 +345,14 @@ func StatisticsHandler(c echo.Context) error {
 			fmt.Println("Row Scan Error:", err)
 			return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning link: %v", err))
 		}
-		results = append(results, model.Statistics{
+		allLinks = append(allLinks, model.Statistics{
 			Month:       month,
 			TotalClicks: totalClicks,
 		})
 	}
 
 	// total click per month per link
-	row2, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, slug_url, SUM(clicks) AS total_clicks FROM links GROUP BY month, slug_url ORDER BY month DESC")
+	row2, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, slug_url, SUM(clicks) AS total_clicks, created_at FROM links GROUP BY month, slug_url ORDER BY month DESC")
 
 	if err != nil {
 		fmt.Println("DB Query Error:", err)
@@ -362,16 +363,22 @@ func StatisticsHandler(c echo.Context) error {
 	for row2.Next() {
 		var month, slugUrl string
 		var totalClicks int
-		if err := row2.Scan(&month, &slugUrl, &totalClicks); err != nil {
+		var createdAt time.Time
+		if err := row2.Scan(&month, &slugUrl, &totalClicks, &createdAt); err != nil {
 			fmt.Println("Row Scan Error:", err)
 			return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning link: %v", err))
 		}
-		results = append(results, model.Statistics{
+		perLinks = append(perLinks, model.Statistics{
 			Month:       month,
 			SlugUrl:     slugUrl,
 			TotalClicks: totalClicks,
+			CreatedAt:   createdAt,
 		})
 	}
 
-	return c.JSON(http.StatusOK, results)
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"all_links":   allLinks,
+		"per_links":   perLinks,
+		"total_links": len(allLinks) + len(perLinks),
+	})
 }

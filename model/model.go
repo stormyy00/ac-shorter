@@ -19,7 +19,8 @@ type Folder struct {
 }
 
 type Statistics struct {
-	Month       string `json:"month"`
-	SlugUrl     string `json:"slug_url,omitempty"`
-	TotalClicks int    `json:"total_clicks"`
+	Month       string    `json:"month"`
+	SlugUrl     string    `json:"slug_url,omitempty"`
+	TotalClicks int       `json:"total_clicks"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
 }
