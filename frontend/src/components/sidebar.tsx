@@ -74,7 +74,7 @@ const Navigation = () => {
               key={idx}
               onClick={() => router.push(link)}
               className={`
-                flex items-center gap-3 px-4 py-2 rounded-xl font-medium transition-all text-[16px]
+                flex items-center gap-3 cursor-pointer px-4 py-2 rounded-xl font-medium transition-all text-[16px]
                 ${
                   generalPath === link
                     ? "bg-gradient-to-r from-orange-100 to-amber-50 text-indigo-500 shadow border-l-4 border-orange-400"

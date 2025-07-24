@@ -17,13 +17,13 @@ import {
 
 const chartConfig = {
   month: {
-    label: "Month",
+    label: "month",
     color: "#6b7280",
   },
 } satisfies ChartConfig;
 
 type BarGraphProps = {
-  data: Array<{ month: string; clicks: number }>;
+  data: Array<{ month: string; total_clicks: number }>;
 };
 
 const BarGraph = ({ data }: BarGraphProps) => {
@@ -59,7 +59,7 @@ const BarGraph = ({ data }: BarGraphProps) => {
               <ChartTooltip content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
               <Bar
-                dataKey="clicks"
+                dataKey="total_clicks"
                 fill="#3b82f6"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={40}

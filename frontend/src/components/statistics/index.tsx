@@ -6,25 +6,54 @@ import { Card, CardContent } from "../ui/card";
 import { BarChart, BarChart3, Clock, Copy, Link } from "lucide-react";
 import BarGraph from "./graph";
 import Select from "../dashboard/select";
+import { useQuery } from "@tanstack/react-query";
+import { statistics } from "@/types";
 
-const performance = [
-  { month: "01-25", clicks: 350 },
-  { month: "02-25", clicks: 340 },
-  { month: "03-25", clicks: 410 },
-  { month: "04-25", clicks: 420 },
-  { month: "05-25", clicks: 330 },
-  { month: "06-25", clicks: 390 },
-  { month: "07-25", clicks: 320 },
-  { month: "08-25", clicks: 330 },
-  { month: "09-25", clicks: 400 },
-  { month: "10-25", clicks: 460 },
-  { month: "11-25", clicks: 310 },
-  { month: "12-25", clicks: 370 },
-];
+// const performance = [
+//   { month: "01-25", clicks: 350 },
+//   { month: "02-25", clicks: 340 },
+//   { month: "03-25", clicks: 410 },
+//   { month: "04-25", clicks: 420 },
+//   { month: "05-25", clicks: 330 },
+//   { month: "06-25", clicks: 390 },
+//   { month: "07-25", clicks: 320 },
+//   { month: "08-25", clicks: 330 },
+//   { month: "09-25", clicks: 400 },
+//   { month: "10-25", clicks: 460 },
+//   { month: "11-25", clicks: 310 },
+//   { month: "12-25", clicks: 370 },
+// ];
 
 const Statistics = () => {
   const [showChart, setShowChart] = useState(true);
   const totalClicks = 2280;
+  const {
+    data: statistics,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["statistics"],
+    queryFn: async () => {
+      const response = await fetch("/api/statistics");
+      if (!response.ok) {
+        throw new Error("Failed to fetch statistics");
+      }
+      return response.json();
+    },
+  }) as { data: statistics; isPending: boolean; error: Error | null };
+
+  if (isPending) {
+    return <div className="text-center text-gray-500">Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500">Error: {error.message}</div>
+    );
+  }
+  const { all_links, per_links, total_links } = statistics;
+  console.log("Statistics data:", { all_links, per_links, total_links });
+
   return (
     <div className="space-y-6 w-full p-4">
       <div className="mb-6">
@@ -74,14 +103,14 @@ const Statistics = () => {
                 Total Links Created
               </span>
               <span className="text-2xl font-semibold text-url-blue-100">
-                32
+                {total_links}
               </span>
             </CardContent>
           </Card>
         </div>
         {showChart && (
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 p-6 mb-2 shadow-sm relative">
-            <BarGraph data={performance} />
+            <BarGraph data={all_links} />
             {/* Hide button */}
             <Button
               className="absolute right-4 -bottom-6 bg-url-blue-violet text-white text-xs px-4 py-1 rounded-full shadow"
@@ -118,17 +147,14 @@ const Statistics = () => {
           </div>
 
           <div className="space-y-4">
-            {latestLinks.map(
-              ({ shortUrl, originalUrl, clicks, createdAt }, index) => (
-                <LinkCard
-                  key={index}
-                  shortUrl={shortUrl}
-                  originalUrl={originalUrl}
-                  clicks={clicks}
-                  createdAt={createdAt}
-                />
-              )
-            )}
+            {per_links.map(({ slug_url, total_clicks, created_at }, index) => (
+              <LinkCard
+                key={index}
+                shortUrl={slug_url}
+                clicks={total_clicks}
+                createdAt={created_at}
+              />
+            ))}
           </div>
         </div>
 
@@ -148,23 +174,22 @@ const Statistics = () => {
           </div>
 
           <div className="space-y-4">
-            {topLinks.map(
-              ({ shortUrl, originalUrl, clicks, createdAt }, index) => (
+            {per_links
+              .filter(({ total_clicks }) => total_clicks > 0)
+              .map(({ slug_url, total_clicks, created_at }, index) => (
                 <div key={index} className="relative">
                   <div className="absolute -left-2 top-8 w-6 h-6 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                     {index + 1}
                   </div>
                   <div className="ml-6">
                     <LinkCard
-                      shortUrl={shortUrl}
-                      originalUrl={originalUrl}
-                      clicks={clicks}
-                      createdAt={createdAt}
+                      shortUrl={slug_url}
+                      clicks={total_clicks}
+                      createdAt={created_at}
                     />
                   </div>
                 </div>
-              )
-            )}
+              ))}
           </div>
         </div>
       </div>
@@ -176,12 +201,12 @@ export default Statistics;
 
 type props = {
   shortUrl: string;
-  originalUrl: string;
+  originalUrl?: string;
   clicks: number;
   createdAt: string;
 };
 
-const LinkCard = ({ shortUrl, originalUrl, clicks, createdAt }: props) => {
+const LinkCard = ({ shortUrl, originalUrl = "", clicks, createdAt }: props) => {
   const [copied, setCopied] = useState(false);
 
   return (
@@ -191,7 +216,7 @@ const LinkCard = ({ shortUrl, originalUrl, clicks, createdAt }: props) => {
           <div className="flex items-center gap-2 mb-2">
             <Link className="w-4 h-4 text-blue-500 flex-shrink-0" />
             <span className="font-mono text-sm font-medium text-blue-600">
-              {shortUrl}
+              acurl/{shortUrl}
             </span>
             <button
               onClick={() => {
@@ -219,7 +244,15 @@ const LinkCard = ({ shortUrl, originalUrl, clicks, createdAt }: props) => {
             </div>
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              <span>{createdAt}</span>
+              <span>
+                {typeof createdAt === "string"
+                  ? new Date(createdAt).toLocaleString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : ""}
+              </span>
             </div>
           </div>
         </div>
@@ -228,50 +261,50 @@ const LinkCard = ({ shortUrl, originalUrl, clicks, createdAt }: props) => {
   );
 };
 
-const latestLinks = [
-  {
-    id: 1,
-    shortUrl: "bit.ly/3xK9mL2",
-    originalUrl: "https://example.com/very-long-url-that-needs-shortening",
-    clicks: 127,
-    createdAt: "2 hours ago",
-  },
-  {
-    id: 2,
-    shortUrl: "bit.ly/2wR8nP5",
-    originalUrl: "https://mydomain.com/another-long-url-example",
-    clicks: 89,
-    createdAt: "5 hours ago",
-  },
-  {
-    id: 3,
-    shortUrl: "bit.ly/4kL3mN8",
-    originalUrl: "https://website.com/product-page-with-parameters",
-    clicks: 43,
-    createdAt: "1 day ago",
-  },
-];
+// const latestLinks = [
+//   {
+//     id: 1,
+//     shortUrl: "bit.ly/3xK9mL2",
+//     originalUrl: "https://example.com/very-long-url-that-needs-shortening",
+//     clicks: 127,
+//     createdAt: "2 hours ago",
+//   },
+//   {
+//     id: 2,
+//     shortUrl: "bit.ly/2wR8nP5",
+//     originalUrl: "https://mydomain.com/another-long-url-example",
+//     clicks: 89,
+//     createdAt: "5 hours ago",
+//   },
+//   {
+//     id: 3,
+//     shortUrl: "bit.ly/4kL3mN8",
+//     originalUrl: "https://website.com/product-page-with-parameters",
+//     clicks: 43,
+//     createdAt: "1 day ago",
+//   },
+// ];
 
-const topLinks = [
-  {
-    id: 1,
-    shortUrl: "bit.ly/1aB2cD3",
-    originalUrl: "https://popular-site.com/trending-content",
-    clicks: 2847,
-    createdAt: "3 weeks ago",
-  },
-  {
-    id: 2,
-    shortUrl: "bit.ly/5eF6gH7",
-    originalUrl: "https://marketing-campaign.com/special-offer",
-    clicks: 1923,
-    createdAt: "1 month ago",
-  },
-  {
-    id: 3,
-    shortUrl: "bit.ly/9iJ0kL1",
-    originalUrl: "https://blog-post.com/viral-article-title",
-    clicks: 1456,
-    createdAt: "2 weeks ago",
-  },
-];
+// const topLinks = [
+//   {
+//     id: 1,
+//     shortUrl: "bit.ly/1aB2cD3",
+//     originalUrl: "https://popular-site.com/trending-content",
+//     clicks: 2847,
+//     createdAt: "3 weeks ago",
+//   },
+//   {
+//     id: 2,
+//     shortUrl: "bit.ly/5eF6gH7",
+//     originalUrl: "https://marketing-campaign.com/special-offer",
+//     clicks: 1923,
+//     createdAt: "1 month ago",
+//   },
+//   {
+//     id: 3,
+//     shortUrl: "bit.ly/9iJ0kL1",
+//     originalUrl: "https://blog-post.com/viral-article-title",
+//     clicks: 1456,
+//     createdAt: "2 weeks ago",
+//   },
+// ];
