@@ -1,35 +1,55 @@
-"use client"
-import {useSession, signOut} from '@/utils/auht-client'
-import Link from 'next/link'
-import React from 'react'
+"use client";
+import { useSession, signOut } from "@/utils/auht-client";
+import Link from "next/link";
+import React from "react";
+import { Button } from "./ui/button";
+import { LayoutGrid, LogOut } from "lucide-react";
 
 const Navigation = () => {
-    const {data: session} = useSession()
- 
+  const { data: session } = useSession();
 
   return (
-
-        <div className="bg-gray-800 p-4">
-            <div className="container mx-auto flex justify-between items-center">
-            <div className="text-gray-200 text-xl font-semibold">AC Shorter</div>
-            <div>
-                {session ? (
-                <button
-                    onClick={() => signOut()}
-                    className="text-white bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-2xl font-semibold"
-                >
-                    Sign Out
-                </button>
-                ) : (
-                <Link href="/signin" className="text-white bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-2xl font-semibold">
-                    Sign In
-                </Link>
-                )}
-            </div>
-            </div>
+    <nav className="bg-gray-950/80 backdrop-blur-sm border-b border-gray-800">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
+        <div className="text-white text-xl font-bold tracking-tight select-none">
+          AC Shorter
         </div>
-      
-  )
-}
+        <div>
+          {session ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1 text-gray-200 hover:text-white px-3 py-1 rounded-xl transition"
+              >
+                <LayoutGrid size={16} />
+                <span className="hidden sm:inline font-medium text-sm">
+                  Dashboard
+                </span>
+              </Link>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="flex items-center gap-1 text-gray-300 hover:text-red-400 transition"
+                onClick={() => signOut()}
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline font-medium text-sm">
+                  Sign Out
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Link
+              href="/signin"
+              className="text-gray-200 hover:text-white px-4 py-1 rounded-xl font-medium transition"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+};
 
-export default Navigation
+export default Navigation;

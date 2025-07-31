@@ -1,12 +1,15 @@
+import { getToken } from "@/utils/auth";
 import { NextResponse } from "next/server";
 
 export const GET = async () => {
+  const { token } = await getToken();
   try {
-    const response = await fetch(`${process.env.BACKEND_URL}/statistics`,{
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
+    const response = await fetch(`${process.env.BACKEND_URL}/statistics`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
