@@ -1,16 +1,19 @@
-"use server"
+"use server";
 
 import { getToken } from "@/utils/auth";
 
 export const getLinks = async (type = "" as string) => {
   const { token } = await getToken();
   try {
-    const response = await fetch(`${process.env.BACKEND_URL}/links?type=${type}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(
+      `${process.env.BACKEND_URL}/links?type=${type}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
     return data;
@@ -29,14 +32,13 @@ export const createLink = async (original: string, customShort: string) => {
     original,
     customShort,
     formData,
-    
   });
 
   const res = await fetch(`${process.env.BACKEND_URL}/submit`, {
     method: "POST",
     body: formData,
     headers: {
-      Authorization: `Bearer ${token}`, 
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -47,9 +49,12 @@ export const createLink = async (original: string, customShort: string) => {
 
 export const deleteLink = async (id: string) => {
   const { token } = await getToken();
-  const res = await fetch(`${process.env.BACKEND_URL}/links/${id}`, { method: "DELETE" , headers: {
+  const res = await fetch(`${process.env.BACKEND_URL}/links/${id}`, {
+    method: "DELETE",
+    headers: {
       Authorization: `Bearer ${token}`,
-    }, });
+    },
+  });
   if (!res.ok) throw new Error("Failed to delete link");
   return true;
 };
@@ -63,4 +68,4 @@ export const verifyUser = async () => {
     },
   }).then((res) => res.json());
   return data;
-}
+};

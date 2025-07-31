@@ -344,6 +344,10 @@ func FetchHandler(c echo.Context) error {
 	}
 	defer rows.Close()
 
+	if rows == nil {
+		return c.JSON(http.StatusOK, []model.Link{})
+	}
+
 	var links []model.Link
 	for rows.Next() {
 		var id int64
