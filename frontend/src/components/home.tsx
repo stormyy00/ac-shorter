@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   Copy,
@@ -26,7 +28,7 @@ import { getLinks, createLink, deleteLink } from "./actions";
 import { links } from "@/types";
 import Link from "next/link";
 
-export default function URLShortener() {
+export default function URLShortener({data}) {
   const [originalUrl, setOriginalUrl] = useState("");
   const [customShort, setCustomShort] = useState("");
   const [alert, setAlert] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -50,6 +52,11 @@ export default function URLShortener() {
   };
 
   const handleSubmit = async () => {
+    if(data?.status !== "success") {
+      showAlert("Please sign in to create a short link", "error");
+      return;
+    }
+
     if (!originalUrl) {
       showAlert("Please enter a valid URL", "error");
       return;
@@ -188,7 +195,7 @@ export default function URLShortener() {
             <CardHeader>
               <CardTitle>Your Shortened Links</CardTitle>
               <CardDescription>
-                {shortenedUrls.length} links created
+                {shortenedUrls.length || 0} links created
               </CardDescription>
             </CardHeader>
             <CardContent>

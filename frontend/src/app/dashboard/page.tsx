@@ -1,7 +1,10 @@
 import Dashboard from '@/components/dashboard'
+
 import React from 'react'
 
-const page = () => {
+const page = async () => {
+
+
   return (
     <div className='w-full flex justify-center'><Dashboard/></div>
   )
