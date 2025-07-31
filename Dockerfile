@@ -7,6 +7,7 @@ RUN go mod download
 
 COPY main.go .
 COPY model ./model
+COPY auth ./auth
 
 RUN go build -o main .
 
