@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -16,6 +17,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/stormyy00/ac-shorter.git/auth"
 	"github.com/stormyy00/ac-shorter.git/model"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
@@ -56,6 +58,7 @@ func init() {
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS links (
 						id INTEGER PRIMARY KEY AUTOINCREMENT,
+						user_id TEXT NOT NULL REFERENCES user(id),
 						link_id    TEXT,
 						original   TEXT NOT NULL,
 						shorten_url TEXT,
@@ -95,9 +98,39 @@ func main() {
 	e.GET("/health", HealthHandler)
 	e.GET("/links", FetchHandler)
 	e.GET("/statistics", StatisticsHandler)
+	e.GET("/auth/me", verifyAuthHandler)
+	e.GET("/auth/verify", verifyAuthHandler)
 
 	e.Logger.Fatal(e.Start(":8080"))
 	fmt.Println("Server started on :8080")
+}
+
+type AuthResponse struct {
+	Status  string      `json:"status"`
+	Message string      `json:"message"`
+	User    *model.User `json:"user,omitempty"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+func verifyAuthHandler(c echo.Context) error {
+	// Get user from request
+	user, err := auth.UserFromRequestHandler(c)
+	if err != nil {
+		log.Printf("failed to get user: %v", err)
+
+		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+			Error: "Authentication failed",
+		})
+	}
+	c.Response().Header().Set("Content-Type", "application/json")
+	return c.JSON(http.StatusOK, AuthResponse{
+		Status:  "success",
+		Message: "Token is valid",
+		User:    &user,
+	})
 }
 
 func RedirectHandler(c echo.Context) error {
@@ -173,6 +206,13 @@ func IndexHandler(c echo.Context) error {
 }
 
 func SubmitHandler(c echo.Context) error {
+
+	user, err := auth.UserFromRequestHandler(c)
+
+	if err != nil {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
+
 	original := strings.TrimSpace(c.FormValue("url"))
 	customShort := strings.TrimSpace(c.FormValue("short"))
 	fmt.Printf("Received original URL: '%s' and custom short: '%s'\n", original, customShort)
@@ -220,9 +260,9 @@ func SubmitHandler(c echo.Context) error {
 
 	linkId := uuid.New().String()
 
-	_, err := db.Exec(
-		`INSERT INTO links (link_id, original, shorten_url, slug_url, clicks) VALUES (?, ?, ?, ?, ?)`,
-		linkId, original, shortenUrl, slug, 0,
+	_, err = db.Exec(
+		`INSERT INTO links (user_id, link_id, original, shorten_url, slug_url, clicks) VALUES (?, ?, ?, ?, ?, ?)`,
+		user.ID, linkId, original, shortenUrl, slug, 0,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
@@ -282,14 +322,18 @@ func HealthHandler(c echo.Context) error {
 }
 
 func FetchHandler(c echo.Context) error {
+	user, err := auth.UserFromRequestHandler(c)
+	if err != nil {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
+
 	linkType := c.Param("type")
 	var rows *sql.Rows
-	var err error
 
 	if linkType == "" {
-		rows, err = db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links")
+		rows, err = db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links WHERE user_id = ?", user.ID)
 	} else if linkType == "recent" {
-		rows, err = db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links ORDER BY created_at ASC LIMIT 4")
+		rows, err = db.Query("SELECT id, link_id, original, shorten_url, slug_url, clicks, created_at FROM links WHERE user_id = ? ORDER BY created_at ASC LIMIT 4", user.ID)
 	} else {
 		return c.String(http.StatusBadRequest, "Invalid type parameter")
 	}
@@ -316,21 +360,33 @@ func FetchHandler(c echo.Context) error {
 }
 
 func DeleteHandler(c echo.Context) error {
+	user, err := auth.UserFromRequestHandler(c)
+	if err != nil {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
+
 	id := c.Param("id")
-	_, err := db.Exec("DELETE FROM links WHERE id = ?", id)
+	res, err := db.Exec("DELETE FROM links WHERE id = ? AND user_id = ?", id, user.ID)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Failed to delete link")
+	}
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		return c.String(http.StatusNotFound, "Link not found or unauthorized")
 	}
 	return c.NoContent(http.StatusNoContent)
 }
 
 func StatisticsHandler(c echo.Context) error {
-
+	user, err := auth.UserFromRequestHandler(c)
+	if err != nil {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
 	var allLinks []model.Statistics
 	var perLinks []model.Statistics
 
 	// total click per month all links
-	row, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, SUM(clicks) AS total_clicks FROM links GROUP BY month ORDER BY month DESC ")
+	row, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, SUM(clicks) AS total_clicks FROM links WHERE user_id = ? GROUP BY month ORDER BY month DESC", user.ID)
 
 	if err != nil {
 		fmt.Println("DB Query Error:", err)
@@ -352,7 +408,7 @@ func StatisticsHandler(c echo.Context) error {
 	}
 
 	// total click per month per link
-	row2, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, slug_url, SUM(clicks) AS total_clicks, created_at FROM links GROUP BY month, slug_url ORDER BY month DESC")
+	row2, err := db.Query("SELECT strftime('%Y-%m', created_at) AS month, slug_url, SUM(clicks) AS total_clicks, created_at FROM links WHERE user_id = ? GROUP BY month, slug_url ORDER BY month DESC", user.ID)
 
 	if err != nil {
 		fmt.Println("DB Query Error:", err)

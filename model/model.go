@@ -2,6 +2,12 @@ package model
 
 import "time"
 
+type User struct {
+	ID    string
+	Email string
+	Name  string
+}
+
 type Link struct {
 	ID         int64     `json:"id"`
 	LinkID     string    `json:"linkId"`
