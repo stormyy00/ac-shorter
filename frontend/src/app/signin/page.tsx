@@ -10,7 +10,7 @@ const page = () => {
     await authClient.signIn.social(
       {
         provider: provider,
-        callbackURL: "/",
+        callbackURL: "/signin",
       },
       {
         onSuccess: async () => {},
