@@ -24,14 +24,22 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
-import { getLinks, createLink, deleteLink } from "./actions";
+import { getLinks, createLink, deleteLink, verifyUser } from "./actions";
 import { links } from "@/types";
 import Link from "next/link";
 
-export default function URLShortener({data}: {data: {status: string}}) {
+
+export default function URLShortener() {
   const [originalUrl, setOriginalUrl] = useState("");
   const [customShort, setCustomShort] = useState("");
   const [alert, setAlert] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const { data: data } = useQuery({
+    queryKey: ["user"],
+    queryFn: async () => verifyUser(),
+    refetchOnWindowFocus: false,
+    retry: false,
+  })
 
   const {
     data: shortenedUrls = [],
