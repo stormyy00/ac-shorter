@@ -4,7 +4,6 @@ import { getToken } from "@/utils/auth";
 
 export const getLinks = async (type = "" as string) => {
   const { token } = await getToken();
-  console.log("Fetching links with type:", token);
   try {
     const response = await fetch(`${process.env.BACKEND_URL}/links?type=${type}`, {
       method: "GET",

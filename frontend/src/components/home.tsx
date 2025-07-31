@@ -140,14 +140,6 @@ export default function URLShortener() {
             </Alert>
           )}
 
-          {shortenedUrls.length === 0 && !isFetching && !isPending ? (
-            <Alert className="bg-yellow-50 border-yellow-500">
-              <AlertDescription className="text-yellow-700">
-                No links found. Start by creating your first short link!
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -206,6 +198,14 @@ export default function URLShortener() {
                 </CardContent>
               </Card>
 
+          {shortenedUrls.length === 0 && !isFetching && !isPending ? (
+            <Alert className="bg-yellow-50 border-yellow-500">
+              <AlertDescription className="text-yellow-700">
+                No links found. Start by creating your first short link!
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
               <Card>
                 <CardHeader>
                   <CardTitle>Your Shortened Links</CardTitle>
@@ -235,7 +235,7 @@ export default function URLShortener() {
                                   <Badge
                                     variant="secondary"
                                     className="flex items-center space-x-1"
-                                  >
+                                    >
                                     <Eye className="w-3 h-3" />
                                     <span>{clicks}</span>
                                   </Badge>
@@ -255,7 +255,7 @@ export default function URLShortener() {
                                   )
                                 }
                                 className="h-8 w-8 p-0"
-                              >
+                                >
                                 <Copy className="w-4 h-4" />
                               </Button>
                               <Button
@@ -263,12 +263,12 @@ export default function URLShortener() {
                                 size="sm"
                                 asChild
                                 className="h-8 w-8 p-0"
-                              >
+                                >
                                 <Link
                                   href={shortenUrl || `/${id}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                >
+                                  >
                                   <ExternalLink className="w-4 h-4" />
                                 </Link>
                               </Button>
@@ -277,7 +277,7 @@ export default function URLShortener() {
                                 size="sm"
                                 onClick={() => handleDelete(id)}
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                              >
+                                >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -291,7 +291,7 @@ export default function URLShortener() {
                   </div>
                 </CardContent>
               </Card>
-            </>
+                    </>
           )}
         </div>
       </div>
