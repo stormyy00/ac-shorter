@@ -30,7 +30,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [jwt()],
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL as string || "http://localhost:3000",
 });
 
 
