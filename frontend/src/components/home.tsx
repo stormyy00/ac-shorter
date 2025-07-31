@@ -28,7 +28,7 @@ import { getLinks, createLink, deleteLink } from "./actions";
 import { links } from "@/types";
 import Link from "next/link";
 
-export default function URLShortener({data}) {
+export default function URLShortener({data}: {data: {status: string}}) {
   const [originalUrl, setOriginalUrl] = useState("");
   const [customShort, setCustomShort] = useState("");
   const [alert, setAlert] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -46,13 +46,13 @@ export default function URLShortener({data}) {
     isFetching: boolean;
   };
 
-  const showAlert = (message, type = "success") => {
+  const showAlert = (message: string, type: "success" | "error" = "success") => {
     setAlert({ message, type });
     setTimeout(() => setAlert(null), 3000);
   };
 
   const handleSubmit = async () => {
-    if(data?.status !== "success") {
+    if (data?.status !== "success") {
       showAlert("Please sign in to create a short link", "error");
       return;
     }
@@ -61,34 +61,27 @@ export default function URLShortener({data}) {
       showAlert("Please enter a valid URL", "error");
       return;
     }
-    try {
       await createLink(originalUrl, customShort);
       showAlert("URL shortened successfully!");
       setOriginalUrl("");
       setCustomShort("");
       refetch();
-    } catch (err) {
-      showAlert("Failed to shorten URL", "error");
-    }
   };
 
   const handleDelete = async (id: string) => {
-    try {
+
       await deleteLink(id);
       showAlert("Link deleted successfully!");
       refetch();
-    } catch (err) {
-      showAlert("Failed to delete link", "error");
-    }
+
   };
 
   const copyToClipboard = async (shortUrl: string) => {
-    try {
+
       await navigator.clipboard.writeText(shortUrl);
       showAlert("Link copied to clipboard!");
-    } catch (err) {
-      showAlert("Failed to copy link", "error");
-    }
+
+
   };
 
   const truncateUrl = (url: string, maxLength = 50) => {

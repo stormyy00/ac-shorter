@@ -75,9 +75,9 @@ export function Grid() {
 
   const baseWidth = 80; // Base width for each panel
   const expandedWidth = 400; // Expanded width when hovered
-  const totalCards = cards.length;
+  // const totalCards = cards.length;
 
-  const getWidth = (index) => {
+  const getWidth = (index: number) => {
     if (hoveredIndex === null) {
       return baseWidth;
     }
