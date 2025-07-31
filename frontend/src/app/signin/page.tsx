@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import authClient from "@/utils/auht-client";
+import { authClient } from "@/utils/auht-client";
 import { ErrorContext } from "better-auth/react";
 import Image from "next/image";
 import React from "react";
@@ -13,9 +13,7 @@ const page = () => {
         callbackURL: "/",
       },
       {
-        onSuccess: async () => {
-
-        },
+        onSuccess: async () => {},
         onError: (ctx: ErrorContext) => {
           alert({
             title: "Something went wrong",
@@ -27,10 +25,10 @@ const page = () => {
     );
   };
   return (
-  <div className="flex justify-center items-center min-h-screen w-full py-6">
-  <Button
-    onClick={() => signIn("google")}
-    className="
+    <div className="flex justify-center items-center min-h-screen w-full py-6">
+      <Button
+        onClick={() => signIn("google")}
+        className="
       w-full max-w-xs
       flex items-center justify-center gap-3
       bg-white border border-gray-200
@@ -42,18 +40,17 @@ const page = () => {
       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
       transition-all
     "
-  >
-    <Image
-      src="https://www.svgrepo.com/show/475656/google-color.svg"
-      alt="Google"
-      width={24}
-      height={24}
-      className="inline-block"
-    />
-    <span>Sign in with Google</span>
-  </Button>
-</div>
-
+      >
+        <Image
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="Google"
+          width={24}
+          height={24}
+          className="inline-block"
+        />
+        <span>Sign in with Google</span>
+      </Button>
+    </div>
   );
 };
 

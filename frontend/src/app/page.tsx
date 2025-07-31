@@ -1,9 +1,11 @@
 import URLShortener from "@/components/home";
+import Navigation from "@/components/navigation";
 
 const page = () => {
   
   return (
-    <div className="w-full bg-gradient-to-br from-slate-50 to-slate-200 p-10">
+    <div className="w-full flex- flex-col bg-gradient-to-br from-slate-50 to-slate-200">
+      <Navigation/>
       <URLShortener />
     </div>
   );
