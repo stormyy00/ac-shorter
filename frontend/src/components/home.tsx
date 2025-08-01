@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import {
   Copy,
-  Link as LinkIcon,
   ExternalLink,
   Trash2,
   Eye,
   Plus,
   RefreshCcwDot,
+  LinkIcon,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,12 +44,7 @@ export default function URLShortener() {
     retry: false,
   });
 
-  const {
-    data: shortenedUrls = [],
-    refetch,
-    isFetching,
-    isPending,
-  } = useQuery({
+  const { data: shortenedUrls = [], refetch } = useQuery({
     queryKey: ["links"],
     queryFn: async () => getLinks("recent"),
   }) as {
@@ -106,193 +102,206 @@ export default function URLShortener() {
   };
 
   return (
-    <div className="min-h-screen p-4 w-full">
-      <div className="max-w-3xl mx-auto">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="text-center space-y-2">
-            <div className="text-4xl font-bold tracking-tight">
-              URL Shortener
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-7 space-y-8">
+            <div className="space-y-6 pt-12">
+              <div className="space-y-4">
+                <Badge variant="secondary" className="w-fit">
+                  <Zap className="w-3 h-3 mr-1" />
+                  Fast Reliable Secure
+                </Badge>
+                <h1 className="text-5xl lg:text-6xl font-bold tracking-tight text-gray-900">
+                  Shorten URLs
+                  <span className="text-blue-600 block">Made Simple</span>
+                </h1>
+                <p className="text-xl text-gray-600 max-w-2xl leading-relaxed">
+                  Transform your long, complex URLs into clean, shareable links
+                  in seconds. Track clicks, customize your links, and manage
+                  everything from one dashboard.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                {data?.status !== "success" ? (
+                  <Button size="lg" className="px-8">
+                    <>Get Creating</>
+                  </Button>
+                ) : null}
+                <Button variant="outline" size="lg" className="px-8">
+                  <Link href="dashboard/statistics">View Analytics</Link>
+                </Button>
+              </div>
             </div>
-            <p className="text-muted-foreground text-lg">
-              Transform long URLs into short, shareable links
-            </p>
-            <RefreshCcwDot
-              onClick={() => refetch()}
-              className={isFetching ? "animate-spin" : ""}
-            />
           </div>
 
-          {alert && (
-            <Alert
-              className={
-                alert.type === "error"
-                  ? "border-red-500 bg-red-50"
-                  : "border-green-500 bg-green-50"
-              }
-            >
-              <AlertDescription
+          <div className="lg:col-span-5 space-y-6">
+            {alert && (
+              <Alert
                 className={
-                  alert.type === "error" ? "text-red-700" : "text-green-700"
+                  alert.type === "error"
+                    ? "border-red-500 bg-red-50"
+                    : "border-green-500 bg-green-50"
                 }
               >
-                {alert.message}
-              </AlertDescription>
-            </Alert>
-          )}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    Create Short Link
-                  </CardTitle>
-                  <CardDescription>
-                    Enter a long URL and optionally customize your short link
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                    <div className="space-y-2">
-                      <Label htmlFor="original-url">Website URL *</Label>
-                      <div className="relative">
-                        <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="original-url"
-                          type="url"
-                          value={originalUrl}
-                          onChange={(e) => setOriginalUrl(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="https://example.com/very-long-url"
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2 ">
-                      <Label htmlFor="custom-short">
-                        Custom Short URL (optional)
-                      </Label>
-                      <div className="flex">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                          short.ly/
-                        </span>
-                        <Input
-                          id="custom-short"
-                          type="text"
-                          value={customShort}
-                          onChange={(e) => setCustomShort(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="custom-name"
-                          className="rounded-l-none"
-                        />
-                      </div>
-                    </div>
+                <AlertDescription
+                  className={
+                    alert.type === "error" ? "text-red-700" : "text-green-700"
+                  }
+                >
+                  {alert.message}
+                </AlertDescription>
+              </Alert>
+            )}
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-2 md:mt-[8vh]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Create Short Link
+                </CardTitle>
+                <CardDescription>
+                  Enter a URL and get a short link instantly
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="original-url">Website URL *</Label>
+                  <div className="relative">
+                    <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="original-url"
+                      type="url"
+                      value={originalUrl}
+                      onChange={(e) => setOriginalUrl(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="https://example.com/very-long-url"
+                      className="pl-10"
+                    />
                   </div>
-                  <Button
-                    onClick={handleSubmit}
-                    className="rounded-lg"
-                    size="lg"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Shorten URL
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
 
-          {shortenedUrls.length === 0 && !isFetching && !isPending ? (
-            <Alert className="bg-yellow-50 border-yellow-500">
-              <AlertDescription className="text-yellow-700">
-                No links found. Start by creating your first short link!
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <>
-              <Card>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-short">
+                    Custom Short URL (optional)
+                  </Label>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                      short.ly/
+                    </span>
+                    <Input
+                      id="custom-short"
+                      type="text"
+                      value={customShort}
+                      onChange={(e) => setCustomShort(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="custom-name"
+                      className="rounded-l-none"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={handleSubmit} className="w-full" size="lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Shorten URL
+                </Button>
+              </CardContent>
+            </Card>
+            {shortenedUrls.length > 0 && (
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm w-full max-w-lg mx-auto">
                 <CardHeader>
-                  <CardTitle>Your Shortened Links</CardTitle>
-                  <CardDescription>
-                    {shortenedUrls.length || 0} links created
-                  </CardDescription>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-lg">Your Links</CardTitle>
+                      <CardDescription>
+                        {shortenedUrls.length} links created
+                      </CardDescription>
+                    </div>
+                    <RefreshCcwDot
+                      onClick={() => refetch()}
+                      className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-foreground"
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {shortenedUrls.map(
-                      ({ id, original, shortenUrl, clicks }, index) => (
-                        <div key={index}>
-                          <div className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                            <div className="flex items-center space-x-4 min-w-0 flex-1">
+                  <div className="space-y-3">
+                    {shortenedUrls
+                      .slice(0, 3)
+                      .map(({ id, original, shortenUrl, clicks }, index) => (
+                        <div key={id}>
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group gap-2">
+                            <div className="flex items-center space-x-3 min-w-0 flex-1 w-full">
                               <div className="flex-shrink-0">
-                                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                  <LinkIcon className="w-4 h-4 text-primary" />
+                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                  <LinkIcon className="w-3 h-3 text-primary" />
                                 </div>
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center space-x-2 mb-1">
-                                  <p className="font-medium text-primary truncate">
-                                    <span>
-                                      {shortenUrl || `short.ly/${id}`}
-                                    </span>
+                                  <p className="font-medium text-primary text-sm truncate max-w-[175px] sm:max-w-md">
+                                    {shortenUrl}
                                   </p>
                                   <Badge
                                     variant="secondary"
-                                    className="flex items-center space-x-1"
-                                    >
-                                    <Eye className="w-3 h-3" />
+                                    className="flex items-center space-x-1 text-xs"
+                                  >
+                                    <Eye className="w-2 h-2" />
                                     <span>{clicks}</span>
                                   </Badge>
                                 </div>
-                                <p className="text-sm text-muted-foreground truncate">
+                                <p className="text-xs text-muted-foreground truncate max-w-[175px] sm:max-w-md">
                                   {truncateUrl(original)}
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center space-x-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity w-full sm:w-auto justify-center">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() =>
-                                  copyToClipboard(
-                                    shortenUrl || `short.ly/${id}`
-                                  )
-                                }
-                                className="h-8 w-8 p-0"
-                                >
+                                onClick={() => copyToClipboard(shortenUrl)}
+                                className="h-8 w-8 p-0 hover:bg-gray-200"
+                                aria-label="Copy link"
+                              >
                                 <Copy className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                asChild
-                                className="h-8 w-8 p-0"
-                                >
-                                <Link
-                                  href={shortenUrl || `/${id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  >
-                                  <ExternalLink className="w-4 h-4" />
-                                </Link>
+                                className="h-8 w-8 p-0 hover:bg-gray-200"
+                                aria-label="Open link"
+                              >
+                                <ExternalLink className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDelete(id)}
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                >
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                aria-label="Delete link"
+                              >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
-                          {index < shortenedUrls.length - 1 && (
+                          {index < Math.min(shortenedUrls.length, 3) - 1 && (
                             <Separator className="my-2" />
                           )}
                         </div>
-                      )
+                      ))}
+                    {shortenedUrls.length > 3 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                      >
+                        View All Links ({shortenedUrls.length})
+                      </Button>
                     )}
                   </div>
                 </CardContent>
               </Card>
-                    </>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

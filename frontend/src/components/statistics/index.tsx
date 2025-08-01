@@ -52,7 +52,7 @@ const Statistics = () => {
     );
   }
   const { all_links, per_links, total_links } = statistics;
-  console.log("Statistics data:", { all_links, per_links, total_links });
+  // console.log("Statistics data:", { all_links, per_links, total_links });
 
   return (
     <div className="space-y-6 w-full p-4">

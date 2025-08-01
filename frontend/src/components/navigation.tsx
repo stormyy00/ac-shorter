@@ -9,7 +9,7 @@ const Navigation = () => {
   const { data: session } = useSession();
 
   return (
-    <nav className="bg-gray-950/80 backdrop-blur-sm border-b border-gray-800">
+    <div className="bg-gray-950/80 border-b  border-gray-100 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
         <div className="text-white text-xl font-bold tracking-tight select-none">
           AC Shorter
@@ -48,7 +48,7 @@ const Navigation = () => {
           )}
         </div>
       </div>
-    </nav>
+    </div>
   );
 };
 
