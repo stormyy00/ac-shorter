@@ -1,13 +1,11 @@
-import Dashboard from '@/components/dashboard'
+import Dashboard from "@/components/dashboard";
 
-import React from 'react'
-
-const page = async () => {
-
-
+const page = () => {
   return (
-    <div className='w-full flex justify-center'><Dashboard/></div>
-  )
-}
+    <div className="w-full flex justify-center">
+        <Dashboard />
+    </div>
+  );
+};
 
-export default page
+export default page;
