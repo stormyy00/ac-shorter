@@ -14,7 +14,7 @@ const Dialog = ({open, onOpenChange, action}: DialogProps) => {
     <AlertDialogHeader>
       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
       <AlertDialogDescription>
-        This action cannot be undone. This will permanently delete your account.
+        This action cannot be undone. This will permanently delete your link.
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>

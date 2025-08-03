@@ -9,6 +9,7 @@ export type links = {
 export interface statistics {
   all_links: all[];
   per_links: per_links[];
+  top_links: top_links[];
   total_links: number;
 }
 
@@ -16,8 +17,14 @@ export type all = {
  month: string; total_clicks: number;
 };
 export type per_links = {
-
     slug_url: string;
     total_clicks: number;
     created_at: string;
 };
+
+export type top_links = {
+  slug_url: string;
+  total_clicks: number;
+  created_at: string;
+};
+

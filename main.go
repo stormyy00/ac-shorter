@@ -436,9 +436,35 @@ func StatisticsHandler(c echo.Context) error {
 		})
 	}
 
+	// top performing links
+	var topLinks []model.Statistics
+	row3, err := db.Query("SELECT slug_url, SUM(clicks) AS total_clicks, created_at, strftime('%Y-%m', MAX(created_at)) AS month FROM links WHERE user_id = ? GROUP BY slug_url ORDER BY total_clicks DESC LIMIT 5", user.ID)
+	if err != nil {
+		fmt.Println("DB Query Error:", err)
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error querying links: %v", err))
+	}
+	defer row3.Close()
+
+	for row3.Next() {
+		var slugUrl, month string
+		var totalClicks int
+		var createdAt time.Time
+		if err := row3.Scan(&slugUrl, &totalClicks, &createdAt, &month); err != nil {
+			fmt.Println("Row Scan Error:", err)
+			return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning link: %v", err))
+		}
+		topLinks = append(topLinks, model.Statistics{
+			Month:       month,
+			SlugUrl:     slugUrl,
+			TotalClicks: totalClicks,
+			CreatedAt:   createdAt,
+		})
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"all_links":   allLinks,
 		"per_links":   perLinks,
+		"top_links":   topLinks,
 		"total_links": len(allLinks) + len(perLinks),
 	})
 }

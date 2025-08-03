@@ -40,8 +40,6 @@ export default function URLShortener() {
   const { data: data } = useQuery({
     queryKey: ["user"],
     queryFn: async () => verifyUser(),
-    refetchOnWindowFocus: false,
-    retry: false,
   });
 
   const { data: shortenedUrls = [], refetch } = useQuery({

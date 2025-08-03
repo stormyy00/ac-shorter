@@ -51,7 +51,7 @@ const Statistics = () => {
       <div className="text-center text-red-500">Error: {error.message}</div>
     );
   }
-  const { all_links, per_links, total_links } = statistics;
+  const { all_links, per_links, top_links, total_links } = statistics;
   // console.log("Statistics data:", { all_links, per_links, total_links });
 
   return (
@@ -174,7 +174,7 @@ const Statistics = () => {
           </div>
 
           <div className="space-y-4">
-            {per_links
+            {top_links
               .filter(({ total_clicks }) => total_clicks > 0)
               .map(({ slug_url, total_clicks, created_at }, index) => (
                 <div key={index} className="relative">
